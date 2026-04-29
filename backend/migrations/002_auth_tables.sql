@@ -4,7 +4,7 @@
 
 ALTER TABLE users
   ADD COLUMN totp_secret VARCHAR(255),
-  ADD COLUMN topt_enabled BOOLEAN DEFAULT false,
+  ADD COLUMN totp_enabled BOOLEAN DEFAULT false,
   ADD COLUMN backup_codes TEXT[];
 
 ---Refresh tokens table
