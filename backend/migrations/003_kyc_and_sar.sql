@@ -13,7 +13,7 @@ CREATE TABLE kyc_records(
     reviewed_by INTEGER REFERENCES users(id),
     reviewed_at TIMESTAMP,
     rejection_reason TEXT,
-    expires_in TIMESTAMP,
+    expires_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW()
 );
 

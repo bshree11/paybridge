@@ -3,9 +3,14 @@ import cors from 'cors';
 import helmet from 'helmet';
 import healthRoutes from './api/routes/health';
 import authRoutes from './api/routes/auth';
-import { errorHandler } from './api/middleware/errorHanlder';
-import { requestLogger } from './api/middleware/requestLogger';
-import { piiMasking } from './api/middleware/piiMasking';
+import kycRoutes from './api/routes/kyc';
+import complianceRoutes from './api/routes/compliance';
+import { errorHandler } 
+  from './api/middleware/errorHandler';
+import { requestLogger } 
+  from './api/middleware/requestLogger';
+import { piiMasking } 
+  from './api/middleware/piiMasking';
 
 const app = express();
 
@@ -17,6 +22,9 @@ app.use(piiMasking);
 
 app.use('/health', healthRoutes);
 app.use('/auth', authRoutes);
+app.use('/kyc', kycRoutes);
+app.use('/compliance', complianceRoutes);
 
 app.use(errorHandler);
+
 export default app;

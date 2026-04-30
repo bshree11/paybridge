@@ -2,6 +2,9 @@ node_modules/
 dist/
 .env
 .env.local
+rules to build in paybridge.md 
+basic docker commands.md
 *.log
 coverage/
 .DS_Store
+npm install -D typescript ts-node @types/node @types/express @types/cors @types/bcryptjs @types/jsonwebtoken @types/qrcode @types/nodemailer jest ts-jest @types/jest supertest @types/supertest eslint prettier
