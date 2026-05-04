@@ -10,6 +10,9 @@ export const env = {
   ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || "",
   JWT_SECRET: process.env.JWT_SECRET || "dev-jwt-secret",
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || "dev-refresh-secret",
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
-
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "",
+  RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID || "",
+  RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET || "",
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
+RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET || '',
 };

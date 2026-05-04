@@ -1,6 +1,8 @@
 import app from './app'
 import { env } from './config/environment';
-import { logger } from './utils/logger'
+import { logger } from './utils/logger';
+import { startCurrencyCron } from './services/currencyCron';
+
 
 const PORT = env.PORT;
 
@@ -9,4 +11,6 @@ app.listen(PORT, () =>{
     logger.info(`Environment: ${env.NODE_ENV}`);
 
     console.log(`http://localhost:${PORT}`)
+    startCurrencyCron();
+
 });
