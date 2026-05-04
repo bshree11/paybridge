@@ -6,6 +6,8 @@ import authRoutes from './api/routes/auth';
 import kycRoutes from './api/routes/kyc';
 import complianceRoutes from './api/routes/compliance';
 import paymentRoutes from './api/routes/payments';
+import sarRoutes from './api/routes/sar';
+
 
 import { errorHandler } 
   from './api/middleware/errorHandler';
@@ -27,6 +29,8 @@ app.use('/auth', authRoutes);
 app.use('/kyc', kycRoutes);
 app.use('/compliance', complianceRoutes);
 app.use('/payments', paymentRoutes);
+app.use('/api/sar', sarRoutes);
+
 
 
 app.use(errorHandler);
