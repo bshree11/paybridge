@@ -8,6 +8,9 @@ import complianceRoutes from './api/routes/compliance';
 import paymentRoutes from './api/routes/payments';
 import sarRoutes from './api/routes/sar';
 import webhookRoutes from './api/routes/webhooks';
+import gdprRoutes from './api/routes/gdpr';
+import disputeRoutes from './api/routes/disputes';
+import settlementRoutes from './api/routes/settlements';
 
 
 import { errorHandler } 
@@ -33,7 +36,9 @@ app.use('/payments', paymentRoutes);
 app.use('/api/sar', sarRoutes);
 app.use('/api/webhooks', webhookRoutes);
 
-
+app.use('/api/gdpr', gdprRoutes);
+app.use('/api/disputes', disputeRoutes);
+app.use('/api/settlements', settlementRoutes);
 
 
 app.use(errorHandler);

@@ -4,6 +4,9 @@
 import { pool } from "../config/database";
 import { redis } from "../config/redis";
 import { logger } from "../utils/logger";
+import { HfInference } from '@huggingface/inference';
+
+const hf = new HfInference(process.env.HF_API_TOKEN || '');
 
 // Types
 
@@ -65,11 +68,24 @@ class FraudDetectionService {
       this.checkNightTransaction(data),
     ]);
 
-    //Add up all the scores, cap at 100
-    const totalScore = Math.min(
-      ruleResults.reduce((sum, r) => sum + r.score, 0),
-      100,
-    );
+    // Add up all rule-based scores
+    const ruleScore = ruleResults.reduce((sum, r) => sum + r.score, 0);
+
+    // Get AI score from Hugging Face
+    const aiScore = await this.checkWithAI(data);
+
+    // Combine: 70% rules + 30% AI (rules are more reliable)
+    const combinedScore = Math.round((ruleScore * 0.7) + (aiScore * 0.3));
+
+    // Cap at 100
+    const totalScore = Math.min(combinedScore, 100);
+
+    logger.info('Fraud scores', {
+      ruleScore,
+      aiScore,
+      combinedScore: totalScore,
+      userId: data.userId,
+    });
 
     //Decide: approve, review or reject
     let decision: "APPROVE" | "REVIEW" | "REJECT";
@@ -416,6 +432,52 @@ class FraudDetectionService {
     );
     return result.rows;
   }
+
+  /**
+   * AI FRAUD CHECK using Hugging Face
+   * Sends transaction data as text to AI model
+   * Returns a score 0-100 based on how suspicious AI thinks it is
+   */
+  private async checkWithAI(data: TransactionData): Promise<number> {
+    try {
+      // Build a text description of the transaction
+      const description = `Payment of ${data.amount} ${data.currency} ` +
+        `from user ${data.userId}. ` +
+        `Recipient: ${data.recipientId || 'unknown'}. ` +
+        `Country: ${data.recipientCountry || 'same'}. ` +
+        `Time: ${new Date().toISOString()}.`;
+
+      // Ask Hugging Face to classify it
+      const result = await hf.textClassification({
+        model: 'distilbert-base-uncased-finetuned-sst-2-english',
+        inputs: description,
+      });
+
+      // Model returns labels like "POSITIVE" or "NEGATIVE"
+      // NEGATIVE in this context = suspicious
+      // POSITIVE = looks normal
+      if (result && result.length > 0) {
+        const topResult = result[0];
+
+        // If model says NEGATIVE (suspicious), use its confidence as score
+        if (topResult.label === 'NEGATIVE') {
+          return Math.round(topResult.score * 100);
+        }
+
+        // If model says POSITIVE (normal), low score
+        return Math.round((1 - topResult.score) * 100);
+      }
+
+      return 0; // AI couldn't decide, return 0 (no impact)
+
+    } catch (error) {
+      // If AI fails, just log and return 0 (don't block payments because AI is down)
+      logger.warn('Hugging Face AI check failed, skipping', { error });
+      return 0;
+    }
+  }
 }
+
+
 
 export default new FraudDetectionService();
