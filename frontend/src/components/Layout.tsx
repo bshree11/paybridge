@@ -2,25 +2,23 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 import {
-    LayoutDashboard,
-    CreditCard,
-    FileText,
-    Shield,
-    Settings,
-    LogOut,
-    Receipt,
-
-}from 'lucide-react';
+  LayoutDashboard,
+  CreditCard,
+  FileText,
+  Shield,
+  Settings as SettingsIcon,
+  LogOut,
+  Receipt,
+} from 'lucide-react';
 
 //Sidebar menu items
 const menuItems = [
-    {path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard
-    },
-    {path: '/payments', label: 'Payments', icon: CreditCard},
-    {path: '/trasactions', label:'Transactions', icon: Receipt},
-    {path: '/kyc', label: 'KYC', icon: FileText},
-    {path: '/settings', label: 'Settings', icon: Settings},
-
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/payments', label: 'Payments', icon: CreditCard },
+  { path: '/transactions', label: 'Transactions', icon: Receipt },
+  { path: '/kyc', label: 'KYC', icon: FileText },
+  { path: '/gdpr', label: 'Data Privacy', icon: Shield },
+  { path: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 //extra menu for compliance officers and admins

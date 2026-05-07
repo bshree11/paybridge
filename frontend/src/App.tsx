@@ -7,8 +7,10 @@ import Dashboard from './pages/Dashboard';
 import KYC from './pages/KYC';
 import Payments from './pages/Payments';
 import Transactions from './pages/Transactions';
+import Compliance from './pages/Compliance';
+import GDPR from './pages/GDPR';
+import Settings from './pages/Settings';
 
-// Protects routes — redirects to login if not authenticated
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
@@ -27,7 +29,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Redirects to dashboard if already logged in
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
@@ -51,19 +52,19 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Public routes — login/signup */}
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
 
-          {/* Protected routes — need login */}
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/payments" element={<Payments />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/kyc" element={<KYC />} />
+            <Route path="/compliance" element={<Compliance />} />
+            <Route path="/gdpr" element={<GDPR />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
 
-          {/* Default redirect */}
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </AuthProvider>
