@@ -4,8 +4,10 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:3000/api',
-    headers: { 'Content-Type' : 'application/json'},
+  baseURL: import.meta.env.PROD 
+    ? 'https://paybridge-i9nw.onrender.com/api'
+    : 'http://localhost:3000/api',
+  headers: { 'Content-Type': 'application/json' },
 });
 
 // Convert error objects to strings globally
