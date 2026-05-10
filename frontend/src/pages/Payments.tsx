@@ -84,7 +84,7 @@ export default function Payments() {
     try {
       const idempotencyKey = `pay_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
-      const res = await api.post('/payments', {
+       await api.post('/payments', {
         amount: payAmount,
         currency,
         cardToken,

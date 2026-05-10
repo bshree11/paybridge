@@ -19,7 +19,7 @@ interface KYCRecord {
 }
 
 export default function KYC() {
-  const { user, setUser } = useAuth();
+  const { user} = useAuth();
   const [records, setRecords] = useState<KYCRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
