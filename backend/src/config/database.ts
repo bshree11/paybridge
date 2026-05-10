@@ -1,17 +1,15 @@
 import { Pool } from 'pg';
 
-export const pool = new Pool({
-  host: '127.0.0.1',
-  port: 5432,
-  user: 'postgres',
-  password: 'postgres',
-  database: 'paybridge',
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 pool.on('error', (err: Error) => {
   console.error('Unexpected database error:', err);
-  process.exit(-1);
 });
+
+export { pool };
 
 export const query = (text: string, params?: any[]) => {
   return pool.query(text, params);
