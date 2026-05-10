@@ -24,50 +24,39 @@ export interface DataExport {
 export async function exportUserData(userId: number): Promise<DataExport> {
   logger.info("Starting GDPR data export", { userId });
 
-  //Get user profile (exclude hashed password)
   const userResult = await pool.query(
-    `SELECT id, email, first_name, last_name, role, default)currency, kyc_status, two_factor_enabled, created_at, updated_at FROM users WHERE id = $1`,
-    [userId],
+    `SELECT id, email, role, preferred_currency, kyc_status, created_at, updated_at FROM users WHERE id = $1`,
+    [userId]
   );
 
-  //Get all transactions
   const transactionsResult = await pool.query(
-    `SELECT id, amount, source_currency, target_currency, status, processor, created_at FROM transactions WHERE user_id = $1`,
-    [userId],
+    `SELECT id, amount, source_currency, target_currency, status, processor, created_at FROM transactions WHERE user_id = $1 ORDER BY created_at DESC`,
+    [userId]
   );
 
-  //Get KYC records
   const kycResult = await pool.query(
-    `SELECT id, document_type, status, submitted_at, reviewed_at FROM kyc_documents WHERE user_id = $1
-        ORDER BY sumbmitted_at DESC`,
-    [userId],
+    `SELECT id, document_type, status, created_at FROM kyc_records WHERE user_id = $1 ORDER BY created_at DESC`,
+    [userId]
   );
 
-  //Get fraud checks
   const fraudResult = await pool.query(
-    `SELECT id, transaction_amount, currency, total_score, decision, checked_at FROM fraud_checks WHERE user_id = $1 ORDER BY checked_at DESC`,
-    [userId],
+    `SELECT id, transaction_id, score, risk_level, recommended_action, created_at FROM fraud_logs WHERE transaction_id IN (SELECT id FROM transactions WHERE user_id = $1) ORDER BY created_at DESC`,
+    [userId]
   );
 
-  //Get disputes
   const disputesResult = await pool.query(
-    `SELECT id, transaction_id, reason, status, created_at FROM disputes WHERE user_id = $1
-        ORDER BY created_at DESC`,
-    [userId],
+    `SELECT id, transaction_id, reason, status, created_at FROM disputes WHERE raised_by = $1 ORDER BY created_at DESC`,
+    [userId]
   );
 
-  //Get audit logs related to this user
   const auditResult = await pool.query(
-    `SELECT id, action, entity_type, entity_id, created_at FROM audit_logs WHERE user_id = $1
-        ORDER BY created_at DESC`,
-    [userId],
+    `SELECT id, action, entity_type, entity_id, created_at FROM audit_logs WHERE actor_id = $1 ORDER BY created_at DESC`,
+    [userId]
   );
 
-  //Get ledger entries
   const ledgerResult = await pool.query(
-    `SELECT id, transaction_id, entry_type, amount, currency, balance_before, balance_after, created_at FROM ledger_entries WHERE account_id = $1::text
-        ORDER BY created_at DESC`,
-    [userId],
+    `SELECT id, transaction_id, entry_type, amount, currency, balance_before, balance_after, created_at FROM ledger_entries WHERE user_id = $1 ORDER BY created_at DESC`,
+    [userId]
   );
 
   const exportData: DataExport = {
@@ -81,28 +70,12 @@ export async function exportUserData(userId: number): Promise<DataExport> {
     ledgerEntries: ledgerResult.rows,
   };
 
-  //Log that export happened (audit trail)
   await logAudit(
-    userId,
-    "user",
-    "gdpr_data_export",
-    "user",
-    String(userId),
-    { tablesExported: 7 },
-    "system",
+    userId, "user", "gdpr_data_export", "user",
+    String(userId), { tablesExported: 7 }, "system"
   );
 
-  logger.info("GDPR data export complete", {
-    userId,
-    transactionCount: transactionsResult.rows.length,
-    totalRecords:
-      transactionsResult.rows.length +
-      kycResult.rows.length +
-      fraudResult.rows.length +
-      disputesResult.rows.length +
-      auditResult.rows.length +
-      ledgerResult.rows.length,
-  });
+  logger.info("GDPR data export complete", { userId });
   return exportData;
 }
 

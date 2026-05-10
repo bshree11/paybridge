@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import * as authService from '../../services/AuthService';
+import { query } from '../../config/database';
 
 //takes user data from req.body and calls AuthService to process it and then gives back data to user.
 
@@ -19,6 +20,36 @@ export async function registerUser(
     }catch(error){
         next(error)
     }
+}
+
+export async function getMe(req: any, res: any) {
+  try {
+    const userId = req.user.userId;
+
+    const result = await query(
+      `SELECT id, email, role, kyc_status, totp_enabled as two_factor_enabled 
+       FROM users WHERE id = $1`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = result.rows[0];
+
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        kycStatus: user.kyc_status,
+        twoFactorEnabled: user.two_factor_enabled,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get user' });
+  }
 }
 
 export async function loginUser(

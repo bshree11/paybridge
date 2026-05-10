@@ -36,128 +36,63 @@ const PLATFORM_FEE_PERCENT = 2.5; // PAYBRIDGE TAKES 2.5% PER TRANSACTION
 
 //Run Daily Settlement : goes through all confirmed transactions that haven't been settled yet, groups them by merchant, calculates fees, and created settlement records */
 
-export async function runSettlement(): Promise<SettlementSummary> {
+export async function runSettlement(): Promise<any> {
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
 
-    logger.info('Starting daily settlement run');
-
     const periodEnd = new Date();
     const periodStart = new Date();
-    periodStart.setHours(0, 0, 0, 0); // Start of today
+    periodStart.setHours(0, 0, 0, 0);
 
-    // Step 1: Find all confirmed transactions not yet settled
     const unsettledResult = await client.query(
-      `SELECT 
-        merchant_id,
-        source_currency as currency,
-        COUNT(*) as tx_count,
-        SUM(amount) as total_amount
+      `SELECT source_currency as currency, COUNT(*) as tx_count, SUM(amount) as total_amount
        FROM transactions
        WHERE status = 'confirmed'
-         AND settled = false
-         AND merchant_id IS NOT NULL
-       GROUP BY merchant_id, source_currency`
+       AND created_at >= $1 AND created_at <= $2
+       GROUP BY source_currency`,
+      [periodStart, periodEnd]
     );
 
     if (unsettledResult.rows.length === 0) {
       await client.query('COMMIT');
-      logger.info('No unsettled transactions found');
-      return {
-        totalMerchants: 0,
-        totalAmount: 0,
-        totalFees: 0,
-        totalNet: 0,
-        settlements: [],
-      };
+      return { totalAmount: 0, totalFees: 0, totalNet: 0, settlements: [] };
     }
 
-    const settlements: SettlementRecord[] = [];
+    const settlements: any[] = [];
     let totalAmount = 0;
     let totalFees = 0;
-    let totalNet = 0;
 
-    // Step 2: Create settlement record for each merchant + currency
     for (const row of unsettledResult.rows) {
       const amount = parseFloat(row.total_amount);
-      const fees = Math.round(amount * (PLATFORM_FEE_PERCENT / 100) * 100) / 100;
+      const fees = Math.round(amount * (2.5 / 100) * 100) / 100;
       const net = Math.round((amount - fees) * 100) / 100;
 
-      // Create settlement record
-      const settlementResult = await client.query(
-        `INSERT INTO settlements 
-         (merchant_id, total_amount, total_fees, net_amount, currency,
-          transaction_count, status, period_start, period_end)
-         VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', $7, $8)
-         RETURNING *`,
-        [
-          row.merchant_id,
-          amount,
-          fees,
-          net,
-          row.currency,
-          parseInt(row.tx_count, 10),
-          periodStart,
-          periodEnd,
-        ]
-      );
-
-      // Mark those transactions as settled
-      await client.query(
-        `UPDATE transactions SET 
-          settled = true,
-          settlement_id = $1,
-          updated_at = NOW()
-         WHERE merchant_id = $2 
-           AND source_currency = $3
-           AND status = 'confirmed' 
-           AND settled = false`,
-        [settlementResult.rows[0].id, row.merchant_id, row.currency]
-      );
-
-      const settlement = mapRow(settlementResult.rows[0]);
-      settlements.push(settlement);
+      settlements.push({
+        currency: row.currency,
+        txCount: parseInt(row.tx_count, 10),
+        totalAmount: amount,
+        fees,
+        net,
+      });
 
       totalAmount += amount;
       totalFees += fees;
-      totalNet += net;
-
-      logger.info('Settlement created for merchant', {
-        merchantId: row.merchant_id,
-        amount,
-        fees,
-        net,
-        currency: row.currency,
-        txCount: row.tx_count,
-      });
     }
 
     await client.query('COMMIT');
 
-    const summary: SettlementSummary = {
-      totalMerchants: settlements.length,
+    return {
       totalAmount: Math.round(totalAmount * 100) / 100,
       totalFees: Math.round(totalFees * 100) / 100,
-      totalNet: Math.round(totalNet * 100) / 100,
+      totalNet: Math.round((totalAmount - totalFees) * 100) / 100,
       settlements,
     };
 
-    logger.info('Daily settlement complete', {
-      totalMerchants: summary.totalMerchants,
-      totalAmount: summary.totalAmount,
-      totalFees: summary.totalFees,
-      totalNet: summary.totalNet,
-    });
-
-    return summary;
-
   } catch (error) {
     await client.query('ROLLBACK');
-    logger.error('Settlement run failed', { error });
     throw error;
-
   } finally {
     client.release();
   }

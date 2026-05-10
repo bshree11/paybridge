@@ -32,7 +32,7 @@ export async function authMiddleware(
         ) as any;
 
         const isBlocked = await redis.get(
-            `blocked:${decoded.jti}`
+            `blocked: ${decoded.jti}`
         );
         if(isBlocked){
             throw new AuthError('Token has been revoked');

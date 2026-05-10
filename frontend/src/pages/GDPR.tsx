@@ -39,8 +39,10 @@ export default function GDPR() {
       setSuccess('Data exported successfully! Check your downloads.');
       setTimeout(() => setSuccess(''), 5000);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to export data');
-    } finally {
+  const msg = err.response?.data?.error || err.response?.data?.message || 'Failed to delete account';
+  setError(typeof msg === 'string' ? msg : 'Failed to delete account');
+  setDeleting(false);
+}finally {
       setExporting(false);
     }
   }

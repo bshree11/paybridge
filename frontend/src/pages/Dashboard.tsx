@@ -57,7 +57,6 @@ export default function Dashboard() {
       });
     } catch (err: any) {
       setError('Failed to load dashboard data');
-      // Set empty data so page still renders
       setData({
         balance: 0,
         currency: 'GBP',
@@ -118,7 +117,7 @@ export default function Dashboard() {
       {/* Welcome */}
       <div>
         <h1 className="text-2xl font-bold text-gray-800">
-          Welcome back{user?.email ? `, ${user.email.split('@')[0]}` : ''}
+          Welcome back
         </h1>
         <p className="text-gray-500 mt-1">Here's your account overview</p>
       </div>

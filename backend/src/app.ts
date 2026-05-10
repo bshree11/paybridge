@@ -28,14 +28,13 @@ app.use(express.json());
 app.use(requestLogger);
 app.use(piiMasking);
 
-app.use('/health', healthRoutes);
-app.use('/auth', authRoutes);
-app.use('/kyc', kycRoutes);
-app.use('/compliance', complianceRoutes);
-app.use('/payments', paymentRoutes);
+app.use('/', healthRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/kyc', kycRoutes);
+app.use('/api/compliance', complianceRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api/sar', sarRoutes);
 app.use('/api/webhooks', webhookRoutes);
-
 app.use('/api/gdpr', gdprRoutes);
 app.use('/api/disputes', disputeRoutes);
 app.use('/api/settlements', settlementRoutes);

@@ -38,7 +38,7 @@ export async function checkVelocity(
         `SELECT AVG(amount) as avg_amount 
         FROM transactions
         WHERE user_id = $1
-        AND status = 'confirmed`,
+        AND status = 'confirmed'`,
         [userId]
     );
 

@@ -94,8 +94,9 @@ export default function Payments() {
       setSuccess(`Payment of ${getCurrencySymbol(currency)}${payAmount.toFixed(2)} was successful!`);
       setAmount('');
       setPreview(null);
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.error || 'Payment failed';
+   } catch (err: any) {
+      const rawError = err.response?.data?.error || err.response?.data?.message || 'Payment failed';
+      const errorMsg = typeof rawError === 'string' ? rawError : 'Payment failed';
 
       if (err.response?.status === 202) {
         setError('Additional 2FA verification required for this payment');

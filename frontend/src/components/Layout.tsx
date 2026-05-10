@@ -1,5 +1,5 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Outlet, Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 import {
   LayoutDashboard,
@@ -9,39 +9,42 @@ import {
   Settings as SettingsIcon,
   LogOut,
   Receipt,
-} from 'lucide-react';
+} from "lucide-react";
 
 //Sidebar menu items
 const menuItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/payments', label: 'Payments', icon: CreditCard },
-  { path: '/transactions', label: 'Transactions', icon: Receipt },
-  { path: '/kyc', label: 'KYC', icon: FileText },
-  { path: '/gdpr', label: 'Data Privacy', icon: Shield },
-  { path: '/settings', label: 'Settings', icon: SettingsIcon },
+  { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/payments", label: "Payments", icon: CreditCard },
+  { path: "/transactions", label: "Transactions", icon: Receipt },
+  { path: "/kyc", label: "KYC", icon: FileText },
+  { path: "/gdpr", label: "Data Privacy", icon: Shield },
+  { path: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 //extra menu for compliance officers and admins
-const complianceMenu =[ 
-    {path:'/compliance', label: 'Compliance', icon: Shield},
+const complianceMenu = [
+  { path: "/compliance", label: "Compliance", icon: Shield },
 ];
 
-export default function Layout(){
-    const {user, logout} = useAuth();
-    const location = useLocation();
+export default function Layout() {
+  const { user, logout } = useAuth();
+  const location = useLocation();
 
-    // show compliance menu only for officers and admins
-      const isComplianceUser = user?.role === 'compliance_officer' || user?.role === 'admin';
+  // show compliance menu only for officers and admins
+  const isComplianceUser =
+    user?.role === "compliance_officer" || user?.role === "admin";
 
-     return (
+  return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
         {/* Logo */}
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-blue-600">PayBridge</h1>
-          <p className="text-xs text-gray-500 mt-1">Payment Orchestration</p>
-        </div>
+    <div className="p-6 border-b border-gray-200">
+  <div className="h-10 overflow-hidden">
+    <img src="navbar_logo.png" alt="PayBridge" className="h-15 mx-auto" />
+  </div>
+  <p className="text-sm text-gray-800 text-center pt-2">Payment Orchestration</p>
+</div>
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1">
@@ -53,8 +56,8 @@ export default function Layout(){
                 to={item.path}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                   isActive
-                    ? 'bg-blue-50 text-blue-700 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? "bg-blue-50 text-blue-700 font-medium"
+                    : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
                 <item.icon size={18} />
@@ -79,8 +82,8 @@ export default function Layout(){
                     to={item.path}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                       isActive
-                        ? 'bg-blue-50 text-blue-700 font-medium'
-                        : 'text-gray-600 hover:bg-gray-100'
+                        ? "bg-blue-50 text-blue-700 font-medium"
+                        : "text-gray-600 hover:bg-gray-100"
                     }`}
                   >
                     <item.icon size={18} />
@@ -116,15 +119,17 @@ export default function Layout(){
         <header className="bg-white border-b border-gray-200 px-8 py-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-800 capitalize">
-              {location.pathname.slice(1) || 'Dashboard'}
+              {location.pathname.slice(1) || "Dashboard"}
             </h2>
             <div className="flex items-center gap-2">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                user?.kycStatus === 'verified'
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-yellow-100 text-yellow-700'
-              }`}>
-                KYC: {user?.kycStatus || 'unverified'}
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  user?.kycStatus === "verified"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700"
+                }`}
+              >
+                KYC: {user?.kycStatus || "unverified"}
               </span>
             </div>
           </div>
@@ -137,6 +142,4 @@ export default function Layout(){
       </main>
     </div>
   );
-
-
 }

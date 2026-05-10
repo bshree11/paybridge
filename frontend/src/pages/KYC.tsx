@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import api from '../api/client';
+import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import api from "../api/client";
 import {
   FileText,
   Upload,
@@ -8,7 +8,7 @@ import {
   Clock,
   XCircle,
   AlertTriangle,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface KYCRecord {
   id: string;
@@ -23,15 +23,15 @@ export default function KYC() {
   const [records, setRecords] = useState<KYCRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   // Form state
-  const [documentType, setDocumentType] = useState('passport');
-  const [documentNumber, setDocumentNumber] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [address, setAddress] = useState('');
+  const [documentType, setDocumentType] = useState("passport");
+  const [documentNumber, setDocumentNumber] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [address, setAddress] = useState("");
 
   useEffect(() => {
     loadKYCRecords();
@@ -39,10 +39,14 @@ export default function KYC() {
 
   async function loadKYCRecords() {
     try {
-      const res = await api.get('/kyc/status');
-      setRecords(res.data.data || []);
+      const res = await api.get("/kyc/status");
+      const data = res.data;
+      if (data.record) {
+        setRecords([data.record]);
+      } else {
+        setRecords([]);
+      }
     } catch {
-      // No records yet — that's fine
       setRecords([]);
     } finally {
       setLoading(false);
@@ -51,31 +55,34 @@ export default function KYC() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     setSubmitting(true);
 
     try {
-      await api.post('/kyc/submit', {
+      await api.post("/kyc/submit", {
+        documentUrl: `doc_${documentType}_${documentNumber}`,
         documentType,
-        documentNumber,
-        fullName,
-        dateOfBirth,
-        address,
       });
 
-      setSuccess('KYC documents submitted successfully! Review typically takes 1-2 business days.');
+      setSuccess(
+        "KYC documents submitted successfully! Review typically takes 1-2 business days.",
+      );
 
       // Clear form
-      setDocumentNumber('');
-      setFullName('');
-      setDateOfBirth('');
-      setAddress('');
+      setDocumentNumber("");
+      setFullName("");
+      setDateOfBirth("");
+      setAddress("");
 
       // Reload records
       await loadKYCRecords();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to submit KYC documents');
+      const errMsg =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to submit KYC documents";
+      setError(typeof errMsg === "string" ? errMsg : JSON.stringify(errMsg));
     } finally {
       setSubmitting(false);
     }
@@ -83,12 +90,12 @@ export default function KYC() {
 
   function getStatusIcon(status: string) {
     switch (status) {
-      case 'verified':
-      case 'approved':
+      case "verified":
+      case "approved":
         return <CheckCircle size={20} className="text-green-500" />;
-      case 'pending':
+      case "pending":
         return <Clock size={20} className="text-yellow-500" />;
-      case 'rejected':
+      case "rejected":
         return <XCircle size={20} className="text-red-500" />;
       default:
         return <AlertTriangle size={20} className="text-gray-500" />;
@@ -97,15 +104,15 @@ export default function KYC() {
 
   function getStatusColor(status: string) {
     switch (status) {
-      case 'verified':
-      case 'approved':
-        return 'bg-green-50 text-green-700';
-      case 'pending':
-        return 'bg-yellow-50 text-yellow-700';
-      case 'rejected':
-        return 'bg-red-50 text-red-700';
+      case "verified":
+      case "approved":
+        return "bg-green-50 text-green-700";
+      case "pending":
+        return "bg-yellow-50 text-yellow-700";
+      case "rejected":
+        return "bg-red-50 text-red-700";
       default:
-        return 'bg-gray-50 text-gray-700';
+        return "bg-gray-50 text-gray-700";
     }
   }
 
@@ -123,27 +130,36 @@ export default function KYC() {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-800">KYC Verification</h2>
+            <h2 className="text-lg font-semibold text-gray-800">
+              KYC Verification
+            </h2>
             <p className="text-sm text-gray-500 mt-1">
               Verify your identity to start making payments
             </p>
           </div>
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(user?.kycStatus || 'unverified')}`}>
-            {getStatusIcon(user?.kycStatus || 'unverified')}
-            <span className="capitalize">{user?.kycStatus || 'Unverified'}</span>
+          <div
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(user?.kycStatus || "unverified")}`}
+          >
+            {getStatusIcon(user?.kycStatus || "unverified")}
+            <span className="capitalize">
+              {user?.kycStatus || "Unverified"}
+            </span>
           </div>
         </div>
       </div>
 
       {/* Already verified */}
-      {user?.kycStatus === 'verified' && (
+      {user?.kycStatus === "verified" && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-6">
           <div className="flex items-center gap-3">
             <CheckCircle size={24} className="text-green-600" />
             <div>
-              <h3 className="font-semibold text-green-800">Identity Verified</h3>
+              <h3 className="font-semibold text-green-800">
+                Identity Verified
+              </h3>
               <p className="text-sm text-green-600 mt-1">
-                Your identity has been verified. You can make payments and use all features.
+                Your identity has been verified. You can make payments and use
+                all features.
               </p>
             </div>
           </div>
@@ -151,7 +167,7 @@ export default function KYC() {
       )}
 
       {/* Submit Form — only show if not verified */}
-      {user?.kycStatus !== 'verified' && (
+      {user?.kycStatus !== "verified" && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="font-semibold text-gray-800 mb-4">Submit Documents</h3>
 
@@ -244,7 +260,7 @@ export default function KYC() {
               className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               <Upload size={16} />
-              {submitting ? 'Submitting...' : 'Submit for Verification'}
+              {submitting ? "Submitting..." : "Submit for Verification"}
             </button>
           </form>
         </div>
@@ -258,23 +274,32 @@ export default function KYC() {
           </div>
           <div className="divide-y divide-gray-100">
             {records.map((record) => (
-              <div key={record.id} className="px-6 py-4 flex items-center justify-between">
+              <div
+                key={record.id}
+                className="px-6 py-4 flex items-center justify-between"
+              >
                 <div className="flex items-center gap-3">
                   <FileText size={18} className="text-gray-400" />
                   <div>
                     <p className="text-sm font-medium text-gray-800 capitalize">
-                      {record.document_type.replace('_', ' ')}
+                      {record.document_type.replace("_", " ")}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Submitted {new Date(record.submitted_at).toLocaleDateString('en-GB', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      })}
+                      Submitted{" "}
+                      {new Date(record.submitted_at).toLocaleDateString(
+                        "en-GB",
+                        {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        },
+                      )}
                     </p>
                   </div>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(record.status)}`}>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(record.status)}`}
+                >
                   {record.status}
                 </span>
               </div>

@@ -138,7 +138,7 @@ export async function getRate(
   try {
     const dbResult = await pool.query(
       `SELECT rate FROM currency_rates 
-       WHERE from_currency = $1 AND to_currency = $2
+ WHERE base_currency = $1 AND target_currency = $2
        AND fetched_at > NOW() - INTERVAL '2 hours'
        ORDER BY fetched_at DESC LIMIT 1`,
       [fromCurrency, toCurrency],
@@ -251,15 +251,15 @@ export async function refreshAllRates(): Promise<void> {
  */
 export async function getAllRates(): Promise<ExchangeRate[]> {
   const result = await pool.query(
-    `SELECT DISTINCT ON (from_currency, to_currency) 
-     from_currency, to_currency, rate, fetched_at
+    `SELECT DISTINCT ON (base_currency, target_currency) 
+ base_currency, target_currency, rate, fetched_at
      FROM currency_rates 
      ORDER BY from_currency, to_currency, fetched_at DESC`,
   );
 
-  return result.rows.map((row) => ({
-    from: row.from_currency,
-    to: row.to_currency,
+ return result.rows.map(row => ({
+  from: row.base_currency,
+  to: row.target_currency,
     rate: parseFloat(row.rate),
     fetchedAt: row.fetched_at,
   }));
@@ -284,7 +284,7 @@ async function saveRate(
 ): Promise<void> {
   try {
     await pool.query(
-      `INSERT INTO currency_rates (from_currency, to_currency, rate, fetched_at)
+      `INSERT INTO currency_rates (base_currency, target_currency, rate, fetched_at)
        VALUES ($1, $2, $3, NOW())`,
       [fromCurrency, toCurrency, rate],
     );

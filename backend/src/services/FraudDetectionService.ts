@@ -4,9 +4,9 @@
 import { pool } from "../config/database";
 import { redis } from "../config/redis";
 import { logger } from "../utils/logger";
-import { HfInference } from '@huggingface/inference';
+import { HfInference } from "@huggingface/inference";
 
-const hf = new HfInference(process.env.HF_API_TOKEN || '');
+const hf = new HfInference(process.env.HF_API_TOKEN || "");
 
 // Types
 
@@ -75,12 +75,12 @@ class FraudDetectionService {
     const aiScore = await this.checkWithAI(data);
 
     // Combine: 70% rules + 30% AI (rules are more reliable)
-    const combinedScore = Math.round((ruleScore * 0.7) + (aiScore * 0.3));
+    const combinedScore = Math.round(ruleScore * 0.7 + aiScore * 0.3);
 
     // Cap at 100
     const totalScore = Math.min(combinedScore, 100);
 
-    logger.info('Fraud scores', {
+    logger.info("Fraud scores", {
       ruleScore,
       aiScore,
       combinedScore: totalScore,
@@ -238,7 +238,7 @@ class FraudDetectionService {
     const result = await pool.query(
       `SELECT AVG(amount) as avg_amount, COUNT(*) as tx_count
        FROM transactions
-       WHERE user_id = $1 AND status = 'completed'`,
+       WHERE user_id = $1 AND status = 'confirmed'`,
       [data.userId],
     );
 
@@ -278,11 +278,11 @@ class FraudDetectionService {
     data: TransactionData,
   ): Promise<FraudRuleResult> {
     const result = await pool.query(
-      `SELECT default_currency FROM users WHERE id = $1`,
+      `SELECT preferred_currency FROM users WHERE id = $1`,
       [data.userId],
     );
 
-    const defaultCurrency = result.rows[0]?.default_currency || "GBP";
+    const defaultCurrency = result.rows[0]?.preferred_currency || "GBP";
 
     if (data.currency !== defaultCurrency) {
       return {
@@ -385,17 +385,19 @@ class FraudDetectionService {
   private async saveFraudCheck(result: FraudCheckResult): Promise<void> {
     try {
       await pool.query(
-        `INSERT INTO fraud_checks 
-         (user_id, transaction_amount, currency, total_score, decision, rules_triggered, checked_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        `INSERT INTO fraud_logs 
+ (transaction_id, score, risk_level, recommended_action, reasons, created_at)
+ VALUES ($1, $2, $3, $4, $5, NOW())`,
         [
           result.transactionData.userId,
-          result.transactionData.amount,
-          result.transactionData.currency,
           result.totalScore,
+          result.totalScore <= 30
+            ? "low"
+            : result.totalScore <= 70
+              ? "medium"
+              : "high",
           result.decision,
           JSON.stringify(result.rules.filter((r) => r.triggered)),
-          result.checkedAt,
         ],
       );
     } catch (error) {
@@ -424,8 +426,8 @@ class FraudDetectionService {
     limit: number = 10,
   ): Promise<any[]> {
     const result = await pool.query(
-      `SELECT * FROM fraud_checks 
-       WHERE user_id = $1 
+      `SELECT * FROM fraud_logs 
+ WHERE transaction_id IN (SELECT id FROM transactions WHERE user_id = $1)
        ORDER BY checked_at DESC 
        LIMIT $2`,
       [userId, limit],
@@ -441,15 +443,16 @@ class FraudDetectionService {
   private async checkWithAI(data: TransactionData): Promise<number> {
     try {
       // Build a text description of the transaction
-      const description = `Payment of ${data.amount} ${data.currency} ` +
+      const description =
+        `Payment of ${data.amount} ${data.currency} ` +
         `from user ${data.userId}. ` +
-        `Recipient: ${data.recipientId || 'unknown'}. ` +
-        `Country: ${data.recipientCountry || 'same'}. ` +
+        `Recipient: ${data.recipientId || "unknown"}. ` +
+        `Country: ${data.recipientCountry || "same"}. ` +
         `Time: ${new Date().toISOString()}.`;
 
       // Ask Hugging Face to classify it
       const result = await hf.textClassification({
-        model: 'distilbert-base-uncased-finetuned-sst-2-english',
+        model: "distilbert-base-uncased-finetuned-sst-2-english",
         inputs: description,
       });
 
@@ -460,7 +463,7 @@ class FraudDetectionService {
         const topResult = result[0];
 
         // If model says NEGATIVE (suspicious), use its confidence as score
-        if (topResult.label === 'NEGATIVE') {
+        if (topResult.label === "NEGATIVE") {
           return Math.round(topResult.score * 100);
         }
 
@@ -469,15 +472,12 @@ class FraudDetectionService {
       }
 
       return 0; // AI couldn't decide, return 0 (no impact)
-
     } catch (error) {
       // If AI fails, just log and return 0 (don't block payments because AI is down)
-      logger.warn('Hugging Face AI check failed, skipping', { error });
+      logger.warn("Hugging Face AI check failed, skipping", { error });
       return 0;
     }
   }
 }
-
-
 
 export default new FraudDetectionService();

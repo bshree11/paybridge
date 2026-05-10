@@ -15,7 +15,7 @@ export async function checkIdempotency(
 
     //Check PostgreSQL
     const result = await query(
-        `SELECT reponse_cache FROM idempotency_keys
+        `SELECT response_cache FROM idempotency_keys
         WHERE key = $1 AND user_id = $2`,
         [key, userId]
     );

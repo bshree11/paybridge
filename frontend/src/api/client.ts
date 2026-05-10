@@ -8,6 +8,20 @@ const api = axios.create({
     headers: { 'Content-Type' : 'application/json'},
 });
 
+// Convert error objects to strings globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.data) {
+      const data = error.response.data;
+      if (typeof data.error === 'object') {
+        error.response.data.error = data.error.message || 'Something went wrong';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 //Automatically attach JWT token on every request
 api.interceptors.request.use((config) =>{
     const token = localStorage.getItem('accessToken');

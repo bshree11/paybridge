@@ -28,71 +28,38 @@ export async function raiseDispute(
   userId: number,
   transactionId: string,
   reason: string
-): Promise<Dispute> {
-  // Step 1: Check if transaction exists and belongs to this user
+): Promise<any> {
   const txResult = await pool.query(
-    `SELECT id, status, amount, source_currency 
-     FROM transactions 
-     WHERE id = $1 AND user_id = $2`,
+    `SELECT id, status FROM transactions WHERE id = $1 AND user_id = $2`,
     [transactionId, userId]
   );
 
   if (txResult.rows.length === 0) {
-    throw new Error('Transaction not found or does not belong to you');
+    throw new Error('Transaction not found');
   }
 
-  const transaction = txResult.rows[0];
-
-  // Can only dispute completed or confirmed transactions
-  if (!['completed', 'confirmed'].includes(transaction.status)) {
-    throw new Error(`Cannot dispute a transaction with status: ${transaction.status}`);
-  }
-
-  // Step 2: Check if dispute already exists for this transaction
-  const existingDispute = await pool.query(
-    `SELECT id FROM disputes 
-     WHERE transaction_id = $1 AND status NOT IN ('RESOLVED_REFUND', 'RESOLVED_REJECTED')`,
+  const existing = await pool.query(
+    `SELECT id FROM disputes WHERE trasaction_id = $1 AND status = 'disputed'`,
     [transactionId]
   );
 
-  if (existingDispute.rows.length > 0) {
-    throw new Error('An active dispute already exists for this transaction');
+  if (existing.rows.length > 0) {
+    throw new Error('Active dispute already exists');
   }
 
-  // Step 3: Create the dispute
   const result = await pool.query(
-    `INSERT INTO disputes 
-     (user_id, transaction_id, reason, status)
-     VALUES ($1, $2, $3, 'OPEN')
+    `INSERT INTO disputes (trasaction_id, raised_by, reason, status)
+     VALUES ($1, $2, $3, 'disputed')
      RETURNING *`,
-    [userId, transactionId, reason]
+    [transactionId, userId, reason]
   );
 
-  // Step 4: Update transaction status to 'disputed'
   await pool.query(
-    `UPDATE transactions SET status = 'disputed', updated_at = NOW()
-     WHERE id = $1`,
+    `UPDATE transactions SET dispute_status = 'disputed', updated_at = NOW() WHERE id = $1`,
     [transactionId]
   );
 
-  // Step 5: Audit log
-  await logAudit(
-    userId,
-    'user',
-    'dispute_raised',
-    'transaction',
-    transactionId,
-    { reason, amount: transaction.amount, currency: transaction.source_currency },
-    'system'
-  );
-
-  logger.info('Dispute raised', {
-    disputeId: result.rows[0].id,
-    transactionId,
-    userId,
-  });
-
-  return mapRow(result.rows[0]);
+  return result.rows[0];
 }
 
 /**
@@ -251,25 +218,19 @@ export async function getUserDisputes(
   userId: number,
   limit: number = 20,
   offset: number = 0
-): Promise<{ disputes: Dispute[]; total: number }> {
+): Promise<{ disputes: any[]; total: number }> {
   const countResult = await pool.query(
-    `SELECT COUNT(*) FROM disputes WHERE user_id = $1`,
+    `SELECT COUNT(*) FROM disputes WHERE raised_by = $1`,
     [userId]
   );
   const total = parseInt(countResult.rows[0].count, 10);
 
   const result = await pool.query(
-    `SELECT * FROM disputes 
-     WHERE user_id = $1 
-     ORDER BY created_at DESC 
-     LIMIT $2 OFFSET $3`,
+    `SELECT * FROM disputes WHERE raised_by = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
     [userId, limit, offset]
   );
 
-  return {
-    disputes: result.rows.map(row => mapRow(row)),
-    total,
-  };
+  return { disputes: result.rows, total };
 }
 
 /**
@@ -279,7 +240,7 @@ export async function getAllDisputes(
   status?: string,
   limit: number = 20,
   offset: number = 0
-): Promise<{ disputes: Dispute[]; total: number }> {
+): Promise<{ disputes: any[]; total: number }> {
   let whereClause = '';
   const params: any[] = [];
 
@@ -298,30 +259,23 @@ export async function getAllDisputes(
   params.push(offset);
 
   const result = await pool.query(
-    `SELECT * FROM disputes 
-     ${whereClause}
-     ORDER BY created_at DESC 
-     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    `SELECT * FROM disputes ${whereClause} ORDER BY created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params
   );
 
-  return {
-    disputes: result.rows.map(row => mapRow(row)),
-    total,
-  };
+  return { disputes: result.rows, total };
 }
 
 /**
  * GET SINGLE DISPUTE BY ID
  */
-export async function getDisputeById(disputeId: string): Promise<Dispute | null> {
+export async function getDisputeById(disputeId: string): Promise<any | null> {
   const result = await pool.query(
     `SELECT * FROM disputes WHERE id = $1`,
     [disputeId]
   );
-
   if (result.rows.length === 0) return null;
-  return mapRow(result.rows[0]);
+  return result.rows[0];
 }
 
 /**

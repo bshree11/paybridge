@@ -9,6 +9,8 @@ const router = Router();
 
 router.post('/register', rateLimit(3, 3600), validate(registerSchema), authController.registerUser);
 
+router.get('/me', authMiddleware, authController.getMe);
+
 router.post('/login', rateLimit(5, 900), validate(loginSchema), authController.loginUser);
 
 router.post('/refresh', rateLimit(10, 900), authController.refreshToken);

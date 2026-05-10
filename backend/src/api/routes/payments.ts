@@ -9,7 +9,7 @@ const router = Router();
 
 router.post('/', authMiddleware, rateLimit(10,60), validate(createPaymentSchema), paymentController.createPayment);
 
-router.get('/', authMiddleware, paymentController.getUserPayments);
+router.get('/my', authMiddleware, paymentController.getUserPayments);
 
 router.get('/:id', authMiddleware, paymentController.getPayment);
 
