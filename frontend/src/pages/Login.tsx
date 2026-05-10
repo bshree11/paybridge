@@ -70,7 +70,8 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-600">PayBridge</h1>
+          {/* <h1 className="text-3xl font-bold text-blue-600">PayBridge</h1> */}
+            <img src="navbar_logo.png" alt="PayBridge" className="h-15 mx-auto" />
           <p className="text-gray-500 mt-2">Payment Orchestration Engine</p>
         </div>
 
