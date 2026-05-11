@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 .env.local
+.vscode
 rules to build in paybridge.md 
 basic docker commands.md
 *.log
